@@ -1,0 +1,191 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Color photo QR codes</title>
+<meta name="description" content="Extending dithered QR codes to full-color photographs with hue-preserving channel-bound forcing.">
+</head>
+<body>
+<style>
+  :root {
+    --paper: #f3f5f7;
+    --ink: #171a1e;
+    --muted: #5a6472;
+    --line: #d3d9e0;
+    --card: #ffffff;
+    --accent: #23459e;
+    --accent2: #b97a18;
+    --pass: #2e7d4f;
+    --code-bg: #e9edf1;
+  }
+  :root:not([data-theme="light"]) { }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper: #14171c;
+      --ink: #e6e9ed;
+      --muted: #98a1ad;
+      --line: #2c323b;
+      --card: #1b1f26;
+      --accent: #7fa3f0;
+      --accent2: #e0a94e;
+      --pass: #6fbf8f;
+      --code-bg: #21262e;
+    }
+  }
+  :root[data-theme="dark"] {
+    --paper: #14171c;
+    --ink: #e6e9ed;
+    --muted: #98a1ad;
+    --line: #2c323b;
+    --card: #1b1f26;
+    --accent: #7fa3f0;
+    --accent2: #e0a94e;
+    --pass: #6fbf8f;
+    --code-bg: #21262e;
+  }
+  * { box-sizing: border-box; }
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font: 16px/1.65 system-ui, -apple-system, "Segoe UI", sans-serif;
+    margin: 0;
+    padding: 3rem 1.25rem 5rem;
+  }
+  main { max-width: 780px; margin: 0 auto; }
+  h1, h2, h3, .label {
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  }
+  h1 {
+    font-size: clamp(1.7rem, 4.5vw, 2.4rem);
+    line-height: 1.15;
+    letter-spacing: -0.02em;
+    margin: 0.4rem 0 0;
+    text-wrap: balance;
+  }
+  h2 {
+    font-size: 1.15rem;
+    margin: 3rem 0 0.75rem;
+    letter-spacing: -0.01em;
+  }
+  p { max-width: 68ch; margin: 0.75rem 0; }
+  .label {
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    color: var(--muted);
+  }
+  .hero-label { color: var(--accent); }
+  .lede { font-size: 1.06rem; color: var(--muted); max-width: 62ch; }
+  a { color: var(--accent); text-underline-offset: 3px; }
+  .gallery {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+    gap: 1rem;
+    margin: 1.5rem 0 0.5rem;
+  }
+  .gallery figure { margin: 0; }
+  .gallery img {
+    width: 100%;
+    max-width: 100%;
+    height: auto;
+    display: block;
+    border-radius: 4px;
+    image-rendering: auto;
+  }
+  .gallery figcaption {
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 0.72rem;
+    color: var(--muted);
+    margin-top: 0.5rem;
+    letter-spacing: 0.05em;
+  }
+  .scanline {
+    border-left: 3px solid var(--accent2);
+    padding: 0.15rem 0 0.15rem 1rem;
+    color: var(--muted);
+    max-width: 64ch;
+    margin: 1.25rem 0;
+  }
+  ol.steps { padding-left: 1.4rem; max-width: 68ch; }
+  ol.steps li { margin: 0.6rem 0; }
+  ol.steps b { font-weight: 650; }
+  .diagram-wrap { overflow-x: auto; margin: 1.5rem 0; }
+  .diagram-row { display: flex; gap: 2rem; align-items: flex-start; flex-wrap: wrap; }
+  .diagram-row figure { margin: 0; }
+  .diagram-row figcaption {
+    font-size: 0.8rem; color: var(--muted); max-width: 30ch; margin-top: 0.5rem;
+  }
+  table {
+    border-collapse: collapse;
+    font-size: 0.85rem;
+    font-variant-numeric: tabular-nums;
+    min-width: 100%;
+  }
+  .table-wrap { overflow-x: auto; margin: 1.25rem 0; }
+  th, td { text-align: left; padding: 0.45rem 1rem 0.45rem 0; border-bottom: 1px solid var(--line); }
+  th { font-family: ui-monospace, Menlo, monospace; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); font-weight: 600; }
+  td.pass { color: var(--pass); font-family: ui-monospace, Menlo, monospace; font-size: 0.8rem; }
+  pre {
+    background: var(--code-bg);
+    border-radius: 6px;
+    padding: 1rem 1.25rem;
+    overflow-x: auto;
+    font-size: 0.82rem;
+    line-height: 1.6;
+  }
+  code { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; }
+  p code, li code { background: var(--code-bg); padding: 0.1em 0.35em; border-radius: 4px; font-size: 0.88em; }
+  .footnote { color: var(--muted); font-size: 0.88rem; border-top: 1px solid var(--line); margin-top: 3rem; padding-top: 1.25rem; }
+</style>
+<main>
+  <span class="label hero-label">qr-code-shenanigans</span>
+  <h1>Color photo QR codes</h1>
+  <p class="lede">Extending <a href="https://www.andrewt.net/dithered-qr-codes/wtf/">Andrew Taylor's dithered QR codes</a> from one-bit halftones to full-color photographs — every code below scans, straight off this screen.</p>
+
+  <div class="gallery">
+    <figure><img src="out/bird_qr.png" alt="QR code containing a color photo of an eagle in flight"><figcaption>bird.jpg &middot; mask auto &middot; 20/20</figcaption></figure>
+    <figure><img src="out/fruit_qr.png" alt="QR code containing a color photo of assorted fruit"><figcaption>fruit.jpg &middot; mask auto &middot; 20/20</figcaption></figure>
+    <figure><img src="out/landscape_qr.png" alt="QR code containing a color photo of a mountain river landscape"><figcaption>landscape.jpg &middot; mask auto &middot; 20/20</figcaption></figure>
+  </div>
+
+  <h2>The two freedoms scanners give you</h2>
+  <p>Taylor's technique exploits one freedom: a scanner samples only the <em>center</em> of each module, so everything outside a center dot is yours. His generator spends that freedom on a Floyd–Steinberg halftone, with a clever two-pass error diffusion that hides the forced data modules inside the dither texture.</p>
+  <p>There's a second freedom sitting next to it: <b>scanners are colorblind</b>. Every decoder flattens the image to grayscale before thresholding — but different decoders flatten differently. Some use Rec.601 luma, some average channels, some just take green. All of these are convex combinations of R, G, B, which yields a guarantee:</p>
+  <div class="scanline">If every channel of a dark center is below the local threshold, and every channel of a light center is above it, the module reads correctly under <em>any</em> grayscale conversion. Hue and saturation never enter into it — they're free for the photo.</div>
+  <p>Darkening a pixel by multiplicative scaling keeps its hue and saturation; lightening by blending toward white keeps its hue. So the forced dots themselves stay in the photo's palette — look at the landscape code above: the dots in the river are navy, not black.</p>
+
+  <h2>The pipeline</h2>
+  <ol class="steps">
+    <li><b>Soft round dots, not square modules.</b> Only a dot of radius 0.36 module-widths is fully forced; a smoothstep ring fades the constraint to zero by 0.50. Where the photo already satisfies the bound, forcing is a no-op and the dot vanishes — dark areas of the photo swallow their dark dots entirely.</li>
+    <li><b>Channel-bound forcing.</b> Dark centers: scale RGB so max(R,G,B) ≤ 0.30. Light centers: blend toward white so min(R,G,B) ≥ 0.72. Function patterns get tighter bounds (0.14 / 0.88) but the same hue-preserving treatment, so even the finder squares pick up a tint.</li>
+    <li><b>Two-pass error diffusion, continuous-tone edition.</b> Taylor pre-diffuses the error from forced data modules into the surrounding halftone. Here there's no halftone — neighbors are continuous-tone, so they can absorb error directly: the luminance the dots inject is Gaussian-spread over nearby unconstrained pixels and subtracted from their luminance (chroma untouched). Local average brightness still tracks the photo, so at viewing distance the grid melts away.</li>
+    <li><b>Mask selection.</b> All 8 QR mask patterns are generated and scored against the photo's per-module luminance; the closest match wins. A cheap cousin of QArt-style codeword steering — worth a few percent of dots that were going to agree with the photo anyway.</li>
+    <li><b>Photo-continued quiet zone.</b> The mandatory margin shows the photo blended toward white (min channel ≥ 0.78) instead of dead space.</li>
+  </ol>
+  <p>Error correction is level H, and none of it is spent at generation time — the centers are all genuinely correct — so the full 30% redundancy stays in reserve for glare, folds, and potato phones.</p>
+
+  <h2>Does it actually scan?</h2>
+  <p>Tested locally with two independent decoders (zxing-cpp and OpenCV's QRCodeDetector) under a 20-way degradation matrix. All three photos pass every case:</p>
+  <div class="table-wrap"><table>
+    <tr><th>Degradation</th><th>Range</th><th>bird</th><th>fruit</th><th>landscape</th></tr>
+    <tr><td>Downscale</td><td>720 → 220 px (≈5 px/module)</td><td class="pass">PASS</td><td class="pass">PASS</td><td class="pass">PASS</td></tr>
+    <tr><td>Gaussian blur</td><td>σ = 1–3 at 480 px</td><td class="pass">PASS</td><td class="pass">PASS</td><td class="pass">PASS</td></tr>
+    <tr><td>JPEG recompression</td><td>quality 75 / 40 / 20</td><td class="pass">PASS</td><td class="pass">PASS</td><td class="pass">PASS</td></tr>
+    <tr><td>Brightness / contrast</td><td>0.6× – 1.3×</td><td class="pass">PASS</td><td class="pass">PASS</td><td class="pass">PASS</td></tr>
+    <tr><td>Rotation</td><td>7° and 25°</td><td class="pass">PASS</td><td class="pass">PASS</td><td class="pass">PASS</td></tr>
+    <tr><td>Perspective warp</td><td>off-axis camera sim</td><td class="pass">PASS</td><td class="pass">PASS</td><td class="pass">PASS</td></tr>
+    <tr><td>Print proxy</td><td>blur + gamma 1.3 + sensor noise</td><td class="pass">PASS</td><td class="pass">PASS</td><td class="pass">PASS</td></tr>
+  </table></div>
+  <p>The parameter sweep found something worth knowing: <b>dot size, not contrast, is the binding constraint.</b> With hard dots at 0.32 module-radius, aggressive downscaling failed even at maximum contrast; at 0.36, everything passes even with the mildest color bounds — which is exactly the trade you want, since dot size costs less visually than crushing the photo's tones.</p>
+
+  <h2>Run it</h2>
+  <pre><code>uv run colorqr.py photo.jpg "https://example.com" -o out.png
+uv run stress.py out.png "https://example.com"   # 20-way robustness check</code></pre>
+  <p>Knobs: <code>--scale</code> (px/module), <code>--dot-hard</code>/<code>--dot-soft</code> (dot radii), <code>--dark-max</code>/<code>--light-min</code> (channel bounds), <code>--diffuse</code> (error-diffusion strength), <code>--saturation</code>, <code>--mask</code>.</p>
+
+  <p class="footnote">Echoing the original article's caveat: a simulation matrix is not a stranger's phone in bad lighting. For print, raise <code>--dot-hard</code> and widen the channel bounds. Code lives in this repo: <code>colorqr.py</code> (generator), <code>stress.py</code> (decoder harness), <code>sweep.py</code> (parameter search). Photos: Wikimedia Commons &amp; picsum.photos.</p>
+</main>
+
+</body>
+</html>
