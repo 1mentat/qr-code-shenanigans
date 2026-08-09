@@ -1,75 +1,78 @@
 # Color photo QR codes
 
-An extension of [Andrew Taylor's dithered QR codes](https://www.andrewt.net/dithered-qr-codes/wtf/)
-from 1-bit halftones to full-color photographs.
+Full-color photographs that still scan. An extension of
+[Andrew Taylor's dithered QR codes](https://www.andrewt.net/dithered-qr-codes/wtf/)
+from 1-bit halftones to color.
 
 **Writeup with scannable examples: <https://1mentat.github.io/qr-code-shenanigans/>**
 
-## The idea
+## How it works
 
-Taylor's technique rests on one observation: scanners sample only the *center*
-of each module, so a module can be subdivided and everything outside the center
-used freely for image content, with a two-pass error diffusion hiding the
-forced data modules inside the halftone.
+Taylor's generator rests on one freedom: a scanner reads only the center of
+each module, so everything outside a center dot is available for image
+content. His codes spend that freedom on a Floyd–Steinberg halftone, with a
+two-pass error diffusion that hides the forced data modules in the dither.
 
-This project adds a second degree of freedom: **scanners are colorblind**.
-Every decoder reduces the image to grayscale before binarizing, but different
-decoders use different conversions (Rec.601 luma, green channel only, channel
-averages...). Any such conversion is a convex combination of R, G, B — so if a
-dark module center has *every* channel below a threshold, and a light center
-has *every* channel above one, the module binarizes correctly no matter which
-conversion the scanner uses. Hue and saturation remain completely free, and
-darkening by multiplicative scaling / lightening by blending toward white
-preserves the photo's hue at every forced pixel.
+Color comes from a second freedom: scanners are colorblind. Every decoder
+flattens the image to grayscale before thresholding, but they flatten
+differently. Some use Rec.601 luma, some average the channels, some read only
+green. All of these are convex combinations of R, G and B, which gives a
+guarantee: if every channel of a dark center sits below the threshold, and
+every channel of a light center sits above it, the module reads correctly
+under any grayscale conversion. Hue and saturation never enter into it.
 
-What `colorqr.py` does:
+The pipeline in `colorqr.py`:
 
-1. **Soft round center dots, not squares** — only a dot covering ~⅓ of each
-   data module's area is hard-forced; a smoothstep ring fades the constraint
-   out, and the rest of the module is the untouched photo. Where the photo
-   already satisfies the bound, the forcing is a no-op and the dot vanishes.
-2. **Channel-bound color forcing** — dark centers: scale RGB so max channel
-   ≤ 0.30 (hue-preserving). Light centers: blend toward white so min channel
-   ≥ 0.72. Guaranteed binarization under any grayscale conversion.
-3. **Continuous-tone two-pass error diffusion** — the luminance error injected
-   by the forced dots is spread (Gaussian) into surrounding unconstrained
-   pixels and subtracted from their luminance (chroma preserved), so the local
-   average brightness still tracks the photo and the code "disappears" at
-   viewing distance.
-4. **Mask selection** — all 8 QR masks are generated and scored against the
-   photo's per-module luminance; the best-matching mask wins (a cheap cousin
-   of QArt-style codeword steering).
-5. **Tinted function patterns** — finder/timing/alignment patterns are forced
-   with tighter bounds (≤ 0.14 / ≥ 0.88) but keep the photo's hue, so even the
-   "fixed" parts pick up the image's palette.
-6. **Photo-continued quiet zone** — the quiet zone shows the photo blended
-   toward white (min channel ≥ 0.78) instead of dead whitespace.
+1. **Round dots, not square modules.** Only a dot of radius 0.36
+   module-widths is fully forced; a smoothstep ring fades the constraint to
+   zero at 0.50. Where the photo already satisfies the bound, forcing does
+   nothing and the dot disappears.
+2. **Channel-bound forcing.** Dark centers: scale RGB until max(R,G,B)
+   ≤ 0.30, which preserves hue and saturation. Light centers: blend toward
+   white until min(R,G,B) ≥ 0.72, which preserves hue. Function patterns use
+   tighter bounds (0.14 / 0.88) with the same math, so the finder squares
+   carry the photo's tint.
+3. **Error diffusion for continuous tone.** Taylor pre-diffuses the error
+   from forced modules into the surrounding halftone. Here the neighbors are
+   continuous-tone and absorb error directly: the luminance the dots inject
+   is spread over nearby unconstrained pixels and subtracted from their
+   luminance, chroma untouched. Local average brightness tracks the photo,
+   and the dot grid fades at viewing distance.
+4. **Mask selection.** All 8 QR mask patterns are scored against the photo's
+   per-module luminance; the closest match wins.
+5. **Photo-continued quiet zone.** The mandatory margin shows the photo
+   blended toward white (min channel ≥ 0.78) instead of blank space.
 
-Error correction level H, so on top of the guaranteed-correct centers there's
-still the full 30% codeword redundancy in reserve for real-world abuse.
+Error correction is level H, and none of it is spent at generation time.
+Every center is correct, so the full 30% redundancy remains for glare, folds
+and bad lighting.
 
 ## Usage
 
 ```sh
 uv run colorqr.py photo.jpg "https://example.com" -o out.png
-uv run stress.py out.png "https://example.com"     # robustness check
+uv run stress.py out.png "https://example.com"   # 20-way robustness check
 ```
 
 Knobs: `--scale` (px/module), `--dot-hard`/`--dot-soft` (dot radii in module
-units), `--dark-max`/`--light-min` (channel bounds), `--diffuse` (error
-diffusion strength), `--saturation`, `--mask`.
+units), `--dark-max`/`--light-min` (channel bounds), `--diffuse`
+(error-diffusion strength), `--saturation`, `--mask`.
 
-## Reliability
+## Verification
 
-`stress.py` decodes with both zxing-cpp and OpenCV under 20 degradations:
-downscaling to 220 px (≈5 px/module), Gaussian blur to σ=3, JPEG q=20,
-brightness 0.6–1.3×, low contrast, rotation, perspective warp, and a
-print-and-photograph proxy (blur + gamma + sensor noise). The default
-parameters were chosen by sweeping dot radius × channel bounds over three test
-photos: **60/60 passes**, with dot radius (not contrast) being the binding
-constraint — hard-forced dots need to be ≥ ~0.36 module radius to survive
-aggressive downscaling.
+`stress.py` decodes with two independent decoders, zxing-cpp and OpenCV's
+QRCodeDetector, under twenty degradations: downscaling to 220 px (about
+5 px/module), Gaussian blur to σ=3, JPEG quality 20, brightness 0.6–1.3×,
+low contrast, rotation, perspective warp, and a print proxy (blur + gamma +
+sensor noise). All three test photos pass every case.
 
-Honest caveat, echoing the original article: passing a simulation matrix is
-not the same as a stranger's potato phone in bad lighting. For print, bump
-`--dot-hard` and widen the channel bounds.
+The parameter sweep (`sweep.py`) surfaced one useful fact: dot size, not
+contrast, is the binding constraint. Hard dots of radius 0.32 fail
+aggressive downscaling at any contrast; at 0.36 every test passes with the
+mildest color bounds. That is the right trade, since dot size costs less
+visually than crushing the photo's tones.
+
+A simulation matrix is not a stranger's phone in bad lighting. For print,
+raise `--dot-hard` and widen the channel bounds.
+
+Photos from Wikimedia Commons and picsum.photos.

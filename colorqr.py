@@ -8,21 +8,21 @@
 # ///
 """Color photo QR codes.
 
-Extends the "dithered QR codes" idea (andrewt.net) from 1-bit halftones to
-full-color photographs. Scanners binarize via some grayscale conversion and
-sample only module centers, so:
+Extends the dithered QR codes technique (andrewt.net) from 1-bit halftones
+to full-color photographs. Scanners binarize via some grayscale conversion
+and sample only module centers, so:
 
   * every RGB channel at a dark-module center is forced below `dark_max`
-    (multiplicative scaling: preserves hue), and every channel at a
-    light-module center above `light_min` (blend toward white) -- correct
-    binarization under ANY channel weighting a decoder might use;
-  * only a soft-edged dot at each data-module center is constrained, the
+    (multiplicative scaling, which preserves hue), and every channel at a
+    light-module center above `light_min` (blend toward white); the module
+    then binarizes correctly under any channel weighting a decoder uses;
+  * only a soft-edged dot at each data-module center is constrained; the
     rest of the module shows the photo untouched;
   * the luminance error injected by forced dots is diffused into nearby
     unconstrained pixels (two-pass error diffusion, generalized to
     continuous tone) so local average brightness still tracks the photo;
-  * all 8 QR masks are scored against the photo and the best-matching one
-    is used; function patterns are hue-tinted; the quiet zone keeps the
+  * all 8 QR masks are scored against the photo and the best match is
+    used; function patterns are hue-tinted; the quiet zone keeps the
     photo, brightness-constrained.
 """
 
