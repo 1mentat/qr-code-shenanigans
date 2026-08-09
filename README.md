@@ -3,6 +3,8 @@
 An extension of [Andrew Taylor's dithered QR codes](https://www.andrewt.net/dithered-qr-codes/wtf/)
 from 1-bit halftones to full-color photographs.
 
+**Writeup with scannable examples: <https://1mentat.github.io/qr-code-shenanigans/>**
+
 ## The idea
 
 Taylor's technique rests on one observation: scanners sample only the *center*
